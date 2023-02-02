@@ -4,16 +4,15 @@ import (
 	"log"
 
 	"github.com/nlsh710599/go-practice/internal/database/model"
-	"github.com/nlsh710599/go-practice/internal/web3"
 
 	"gorm.io/gorm"
 )
 
 type RDS interface {
 	CreateTable() error
-	GetLatestNBlocks(n uint64) ([]*web3.BlockWithoutTransaction, error)
-	GetBlockByNumber(n uint64) (*web3.GetBlockByNumberResp, error)
-	GetTransactionByHash(txHash string) (*web3.GetTransactionByHashResp, error)
+	GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction, error)
+	GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error)
+	GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error)
 }
 
 type postgresClient struct {
@@ -33,17 +32,17 @@ func (pg *postgresClient) CreateTable() error {
 	return nil
 }
 
-func (pg *postgresClient) GetLatestNBlocks(n uint64) ([]*web3.BlockWithoutTransaction, error) {
+func (pg *postgresClient) GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction, error) {
 	// TODO: implementation needed
-	return make([]*web3.BlockWithoutTransaction, n), nil
+	return make([]*BlockWithoutTransaction, n), nil
 }
 
-func (pg *postgresClient) GetBlockByNumber(n uint64) (*web3.GetBlockByNumberResp, error) {
+func (pg *postgresClient) GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error) {
 	// TODO: implementation needed
-	return &web3.GetBlockByNumberResp{}, nil
+	return &GetBlockByNumberResp{}, nil
 }
 
-func (pg *postgresClient) GetTransactionByHash(txHash string) (*web3.GetTransactionByHashResp, error) {
+func (pg *postgresClient) GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error) {
 	// TODO: implementation needed
-	return &web3.GetTransactionByHashResp{}, nil
+	return &GetTransactionByHashResp{}, nil
 }
