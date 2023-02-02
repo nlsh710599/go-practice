@@ -13,6 +13,8 @@ type RDS interface {
 	GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction, error)
 	GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error)
 	GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error)
+	GetOldestConfirmedBlock() (uint64, error)
+	GetLatestConfirmedBlock() (uint64, error)
 }
 
 type postgresClient struct {
@@ -45,4 +47,14 @@ func (pg *postgresClient) GetBlockByNumber(n uint64) (*GetBlockByNumberResp, err
 func (pg *postgresClient) GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error) {
 	// TODO: implementation needed
 	return &GetTransactionByHashResp{}, nil
+}
+
+func (pg *postgresClient) GetOldestConfirmedBlock() (uint64, error) {
+	// TODO: implementation needed
+	return 0, nil
+}
+
+func (pg *postgresClient) GetLatestConfirmedBlock() (uint64, error) {
+	// TODO: implementation needed
+	return 0, nil
 }
