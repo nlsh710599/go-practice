@@ -18,7 +18,7 @@ type Config struct {
 	PostgresUser     string `default:"postgres" split_words:"true"`
 	PostgresPassword string `default:"docker" split_words:"true"`
 
-	confirmationBlockCount int `default:"20" split_words:"true"`
+	ConfirmationBlockCount int `default:"20" split_words:"true"`
 }
 
 var config Config
