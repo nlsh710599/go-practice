@@ -51,7 +51,7 @@ func main() {
 	go syncBlockBackward(1, oldestConfirmedBlock, c)
 
 	headers := make(chan *types.Header)
-	startSyncOldBlocks := false
+	startSyncBlockForward := false
 
 	sub, err := web3ws.GetClient().SubscribeNewHead(context.Background(), headers)
 	if err != nil {
@@ -63,9 +63,9 @@ func main() {
 		case err := <-sub.Err():
 			log.Fatal(err)
 		case header := <-headers:
-			if !startSyncOldBlocks {
+			if !startSyncBlockForward {
 				go syncBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
-				startSyncOldBlocks = true
+				startSyncBlockForward = true
 			}
 			go syncBlockListened(header, c)
 		}
