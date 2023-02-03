@@ -48,7 +48,7 @@ func main() {
 		log.Panicf("Failed to get oldest confirmed block in db: %v", err)
 	}
 
-	go syncer.SyncBlockBackward(1, oldestConfirmedBlock, c)
+	go syncer.SyncConformedBlockBackward(1, oldestConfirmedBlock, c)
 
 	headers := make(chan *types.Header)
 	startSyncBlockForward := false
@@ -65,10 +65,10 @@ func main() {
 				log.Fatal(err)
 			case header := <-headers:
 				if !startSyncBlockForward {
-					go syncer.SyncBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
+					go syncer.SyncConformedBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
 					startSyncBlockForward = true
 				}
-				go syncer.SyncBlockListened(header, c)
+				go syncer.SyncNewBlock(header, c)
 			}
 		}
 	}()
