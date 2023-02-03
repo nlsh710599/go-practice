@@ -3,17 +3,17 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nlsh710599/go-practice/internal/config"
 	"github.com/nlsh710599/go-practice/internal/database"
+	"github.com/nlsh710599/go-practice/internal/syncer"
 	"github.com/nlsh710599/go-practice/internal/web3"
 )
-
-type Controller struct {
-	RDS         database.RDS
-	web3Service web3.Web3
-}
 
 func main() {
 
@@ -33,9 +33,9 @@ func main() {
 		log.Panicf("Failed to create web3 instance: %v", err)
 	}
 
-	c := &Controller{
+	c := &syncer.Controller{
 		RDS:         rds,
-		web3Service: web3rpc,
+		Web3Service: web3rpc,
 	}
 
 	oldestConfirmedBlock, err := c.RDS.GetOldestConfirmedBlock()
@@ -48,7 +48,7 @@ func main() {
 		log.Panicf("Failed to get oldest confirmed block in db: %v", err)
 	}
 
-	go syncBlockBackward(1, oldestConfirmedBlock, c)
+	go syncer.SyncBlockBackward(1, oldestConfirmedBlock, c)
 
 	headers := make(chan *types.Header)
 	startSyncBlockForward := false
@@ -58,29 +58,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for {
-		select {
-		case err := <-sub.Err():
-			log.Fatal(err)
-		case header := <-headers:
-			if !startSyncBlockForward {
-				go syncBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
-				startSyncBlockForward = true
+	go func() {
+		for {
+			select {
+			case err := <-sub.Err():
+				log.Fatal(err)
+			case header := <-headers:
+				if !startSyncBlockForward {
+					go syncer.SyncBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
+					startSyncBlockForward = true
+				}
+				go syncer.SyncBlockListened(header, c)
 			}
-			go syncBlockListened(header, c)
 		}
-	}
+	}()
 
-}
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down blockchain indexer ...")
 
-func syncBlockBackward(from uint64, to uint64, c *Controller) {
-	// TODO: implementation needed
-}
-
-func syncBlockForward(from uint64, to uint64, c *Controller) {
-	// TODO: implementation needed
-}
-
-func syncBlockListened(header *types.Header, c *Controller) {
-	// TODO: implementation needed
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	log.Println("Blockchain indexer exiting")
 }
