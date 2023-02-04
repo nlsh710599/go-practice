@@ -31,6 +31,10 @@ func main() {
 		log.Panicf("Failed to initialize RDS: %v", err)
 	}
 
+	if err := rds.CreateTable(); err != nil {
+		log.Panicf("Failed to create table: %v", err)
+	}
+
 	web3rpc, err := web3.New(config.Get().RpcUrl)
 	if err != nil {
 		log.Panicf("Failed to create web3 instance: %v", err)

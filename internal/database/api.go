@@ -10,16 +10,24 @@ import (
 )
 
 type RDS interface {
+	GetClient() *gorm.DB
 	CreateTable() error
-	GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction, error)
-	GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error)
-	GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error)
+	GetLatestNBlocks(uint64) ([]*BlockWithoutTransaction, error)
+	GetBlockByNumber(uint64) (*GetBlockByNumberResp, error)
+	GetTransactionByHash(string) (*GetTransactionByHashResp, error)
 	GetOldestConfirmedBlockNumber() (uint64, error)
 	GetLatestConfirmedBlockNumber() (uint64, error)
+	InsertBlock(*model.Block) error
+	InsertTransaction(*model.Transaction) error
+	InsertLog(*model.Log) error
 }
 
 type postgresClient struct {
 	client *gorm.DB
+}
+
+func (pg *postgresClient) GetClient() *gorm.DB {
+	return pg.client
 }
 
 func (pg *postgresClient) CreateTable() error {
@@ -70,4 +78,16 @@ func (pg *postgresClient) GetLatestConfirmedBlockNumber() (uint64, error) {
 		return 0, err
 	}
 	return latestConfirmedBlockNumber, nil
+}
+
+func (pg *postgresClient) InsertBlock(blockInfo *model.Block) error {
+	return pg.client.Create(&blockInfo).Error
+}
+
+func (pg *postgresClient) InsertTransaction(transactionInfo *model.Transaction) error {
+	return pg.client.Create(&transactionInfo).Error
+}
+
+func (pg *postgresClient) InsertLog(LogInfo *model.Log) error {
+	return pg.client.Create(&LogInfo).Error
 }

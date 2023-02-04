@@ -21,6 +21,7 @@ type Web3 interface {
 	GetBlockNumber() (uint64, error)
 	GetBlockByNumber(blockNumber *big.Int) (*GetBlockByNumberResp, error)
 	GetTransactionReceipt(hash string) (*types.Receipt, error)
+	GetTransactionByHash(hash string) (*types.Transaction, bool, error)
 }
 
 func (wc *web3Client) Close() {
@@ -61,6 +62,10 @@ func (wc *web3Client) GetBlockByNumber(blockNumber *big.Int) (*GetBlockByNumberR
 
 func (wc *web3Client) GetTransactionReceipt(hash string) (*types.Receipt, error) {
 	return wc.client.TransactionReceipt(context.Background(), common.HexToHash(hash))
+}
+
+func (wc *web3Client) GetTransactionByHash(hash string) (*types.Transaction, bool, error) {
+	return wc.client.TransactionByHash(context.Background(), common.HexToHash(hash))
 }
 
 func DialEth(url string) (*web3Client, error) {
