@@ -11,14 +11,14 @@ type Controller struct {
 	Web3Service web3.Web3
 }
 
-func SyncConformedBlockBackward(from uint64, to uint64, c *Controller) {
+func SyncConformedBlockBackward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	// TODO: implementation needed
 }
 
-func SyncConformedBlockForward(from uint64, to uint64, c *Controller) {
+func SyncConformedBlockForward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	// TODO: implementation needed
 }
 
-func SyncNewBlock(header *types.Header, c *Controller) {
+func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
 	// TODO: implementation needed
 }

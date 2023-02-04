@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nlsh710599/go-practice/internal/config"
@@ -14,6 +14,14 @@ import (
 	"github.com/nlsh710599/go-practice/internal/syncer"
 	"github.com/nlsh710599/go-practice/internal/web3"
 )
+
+func signalHandler(sigChan chan os.Signal, aborter chan<- bool) {
+	for sig := range sigChan {
+		log.Printf("receive signal: %d\n", sig)
+		close(aborter)
+	}
+
+}
 
 func main() {
 
@@ -48,7 +56,19 @@ func main() {
 		log.Panicf("Failed to get oldest confirmed block in db: %v", err)
 	}
 
-	go syncer.SyncConformedBlockBackward(1, oldestConfirmedBlock, c)
+	signalChan := make(chan os.Signal, 1)
+	aborter := make(chan bool)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go signalHandler(signalChan, aborter)
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		syncer.SyncConformedBlockBackward(1, oldestConfirmedBlock, c, aborter)
+		wg.Done()
+	}()
 
 	headers := make(chan *types.Header)
 	startSyncConformedBlockForward := false
@@ -58,6 +78,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	wg.Add(1)
 	go func() {
 		for {
 			select {
@@ -65,20 +86,21 @@ func main() {
 				log.Fatal(err)
 			case header := <-headers:
 				if !startSyncConformedBlockForward {
-					go syncer.SyncConformedBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c)
+					wg.Add(1)
+					go func() {
+						syncer.SyncConformedBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c, aborter)
+						wg.Done()
+					}()
 					startSyncConformedBlockForward = true
 				}
-				go syncer.SyncNewBlock(header, c)
+				go syncer.SyncNewBlock(header, c, aborter)
+			case <-aborter:
+				log.Println("handler finished")
+				wg.Done()
+				return
 			}
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down blockchain indexer ...")
-
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	log.Println("Blockchain indexer exiting")
+	wg.Wait()
 }
