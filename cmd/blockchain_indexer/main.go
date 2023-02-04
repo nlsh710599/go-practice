@@ -93,7 +93,11 @@ func main() {
 					}()
 					startSyncConformedBlockForward = true
 				}
-				go syncer.SyncNewBlock(header, c, aborter)
+				wg.Add(1)
+				go func() {
+					syncer.SyncNewBlock(header, c, aborter)
+					wg.Done()
+				}()
 			case <-aborter:
 				log.Println("handler finished")
 				wg.Done()
