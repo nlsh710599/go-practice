@@ -46,12 +46,12 @@ func main() {
 		Web3Service: web3rpc,
 	}
 
-	oldestConfirmedBlock, err := c.RDS.GetOldestConfirmedBlock()
+	oldestConfirmedBlock, err := c.RDS.GetOldestConfirmedBlockNumber()
 	if err != nil {
 		log.Panicf("Failed to get oldest confirmed block in db: %v", err)
 	}
 
-	latestConfirmedBlock, err := c.RDS.GetLatestConfirmedBlock()
+	latestConfirmedBlock, err := c.RDS.GetLatestConfirmedBlockNumber()
 	if err != nil {
 		log.Panicf("Failed to get latest confirmed block in db: %v", err)
 	}
@@ -64,11 +64,13 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		syncer.SyncConformedBlockBackward(1, oldestConfirmedBlock, c, aborter)
-		wg.Done()
-	}()
+	if oldestConfirmedBlock != 0 {
+		wg.Add(1)
+		go func() {
+			syncer.SyncConformedBlockBackward(0, oldestConfirmedBlock-1, c, aborter)
+			wg.Done()
+		}()
+	}
 
 	headers := make(chan *types.Header)
 	startSyncConformedBlockForward := false
@@ -88,7 +90,11 @@ func main() {
 				if !startSyncConformedBlockForward {
 					wg.Add(1)
 					go func() {
-						syncer.SyncConformedBlockForward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount)-1, c, aborter)
+						if latestConfirmedBlock == 0 {
+							syncer.SyncConformedBlockBackward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
+						} else {
+							syncer.SyncConformedBlockForward(latestConfirmedBlock+1, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
+						}
 						wg.Done()
 					}()
 					startSyncConformedBlockForward = true

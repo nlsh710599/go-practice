@@ -12,13 +12,21 @@ type Controller struct {
 }
 
 func SyncConformedBlockBackward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
-	// TODO: implementation needed
+	for i := to; i > from; i-- {
+		syncConformedBlock(i)
+	}
 }
 
 func SyncConformedBlockForward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
-	// TODO: implementation needed
+	for i := from; i < to; i++ {
+		syncConformedBlock(i)
+	}
 }
 
 func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
+	// TODO: implementation needed
+}
+
+func syncConformedBlock(blockNumber uint64) {
 	// TODO: implementation needed
 }
