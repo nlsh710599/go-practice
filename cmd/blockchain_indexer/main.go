@@ -53,7 +53,7 @@ func main() {
 
 	latestConfirmedBlock, err := c.RDS.GetLatestConfirmedBlock()
 	if err != nil {
-		log.Panicf("Failed to get oldest confirmed block in db: %v", err)
+		log.Panicf("Failed to get latest confirmed block in db: %v", err)
 	}
 
 	signalChan := make(chan os.Signal, 1)
