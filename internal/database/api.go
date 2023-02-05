@@ -18,6 +18,7 @@ type RDS interface {
 	GetOldestConfirmedBlockNumber() (uint64, error)
 	GetLatestConfirmedBlockNumber() (uint64, error)
 	InsertBlock(*model.Block) error
+	UpdateBlock(uint64, bool) error
 	InsertTransaction(*model.Transaction) error
 	InsertLog(*model.Log) error
 }
@@ -78,6 +79,12 @@ func (pg *postgresClient) GetLatestConfirmedBlockNumber() (uint64, error) {
 		return 0, err
 	}
 	return latestConfirmedBlockNumber, nil
+}
+
+func (pg *postgresClient) UpdateBlock(number uint64, isConfirmed bool) error {
+	return pg.client.Model(&model.Block{}).
+		Where("number = ?", number).
+		Update("is_confirmed", isConfirmed).Error
 }
 
 func (pg *postgresClient) InsertBlock(blockInfo *model.Block) error {
