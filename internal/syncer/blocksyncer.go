@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/nlsh710599/go-practice/internal/config"
 	"github.com/nlsh710599/go-practice/internal/database"
 	"github.com/nlsh710599/go-practice/internal/database/model"
 	"github.com/nlsh710599/go-practice/internal/web3"
@@ -16,33 +17,44 @@ type Controller struct {
 	Web3Service web3.Web3
 }
 
-func SyncConformedBlockBackward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
+func SyncConfirmedBlockBackward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	for i := to; i > from; i-- {
 		select {
 		case <-aborter:
 			return
 		default:
-			syncConformedBlock(i, c)
+			syncConfirmedBlock(i, c)
 		}
 	}
 }
 
-func SyncConformedBlockForward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
+func SyncConfirmedBlockForward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	for i := from; i < to; i++ {
 		select {
 		case <-aborter:
 			return
 		default:
-			syncConformedBlock(i, c)
+			syncConfirmedBlock(i, c)
 		}
 	}
 }
 
-func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
-	// TODO: implementation needed
+func SyncNewBlock(blockNumber uint64, c *Controller) {
+	syncBlock(blockNumber, c)
+	if blockNumber > uint64(config.Get().ConfirmationBlockCount) {
+		syncConfirmedBlock(blockNumber-uint64(config.Get().ConfirmationBlockCount), c)
+	}
 }
 
-func syncConformedBlock(blockNumber uint64, c *Controller) {
+func syncConfirmedBlock(blockNumber uint64, c *Controller) {
+	syncBlock(blockNumber, c)
+	err := c.RDS.UpdateBlock(blockNumber, true)
+	if err != nil {
+		log.Panicf("Failed to insert block : %v", err)
+	}
+}
+
+func syncBlock(blockNumber uint64, c *Controller) {
 	log.Println("I'm going to sync block No.", blockNumber)
 	blockInfo, err := c.Web3Service.GetBlockByNumber(big.NewInt(int64(blockNumber)))
 	if err != nil {
@@ -65,14 +77,8 @@ func syncConformedBlock(blockNumber uint64, c *Controller) {
 	}
 
 	if err != nil {
-		log.Panicf("Failed to sync confirmed block : %v", err)
+		log.Panicf("Failed to sync transactions : %v", err)
 	}
-
-	err = c.RDS.UpdateBlock(blockInfo.Number, true)
-	if err != nil {
-		log.Panicf("Failed to insert block : %v", err)
-	}
-
 }
 
 func syncTx(blockNumber uint64, tx string, c *Controller) {

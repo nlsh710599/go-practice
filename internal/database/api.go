@@ -7,6 +7,7 @@ import (
 	"github.com/nlsh710599/go-practice/internal/database/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type RDS interface {
@@ -45,23 +46,39 @@ func (pg *postgresClient) CreateTable() error {
 }
 
 func (pg *postgresClient) GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction, error) {
-	// TODO: implementation needed
-	return make([]*BlockWithoutTransaction, n), nil
+	var res []*BlockWithoutTransaction
+	if err := pg.client.Model(&model.Block{}).Order("number desc").Limit(int(n)).Find(&res).Error; err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (pg *postgresClient) GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error) {
-	// TODO: implementation needed
-	return &GetBlockByNumberResp{}, nil
+	var res *GetBlockByNumberResp
+	if err := pg.client.Model(&model.Block{}).Where("number = ?", n).Scan(&res).Error; err != nil {
+		return nil, err
+	}
+	if err := pg.client.Model(&model.Transaction{}).Select("hash").Where("block_number = ?", n).Scan(&res.Transactions).Error; err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (pg *postgresClient) GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error) {
-	// TODO: implementation needed
-	return &GetTransactionByHashResp{}, nil
+	// TODO: refine needed
+	var res *GetTransactionByHashResp
+	if err := pg.client.Model(&model.Transaction{}).Where("hash = ?", txHash).Scan(&res).Error; err != nil {
+		return nil, err
+	}
+	if err := pg.client.Model(&model.Log{}).Select("data, index").Where("transaction_hash = ?", txHash).Scan(&res.Logs).Error; err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (pg *postgresClient) GetOldestConfirmedBlockNumber() (uint64, error) {
 	var oldestConfirmedBlockNumber uint64
-	if err := pg.client.Table("blocks").Select("min(number)").Scan(&oldestConfirmedBlockNumber).Error; err != nil {
+	if err := pg.client.Table("blocks").Select("min(number)").Where("is_confirmed = ?", true).Scan(&oldestConfirmedBlockNumber).Error; err != nil {
 		if strings.Contains(err.Error(), "converting NULL to uint64 is unsupported") {
 			return 0, nil
 		}
@@ -72,7 +89,7 @@ func (pg *postgresClient) GetOldestConfirmedBlockNumber() (uint64, error) {
 
 func (pg *postgresClient) GetLatestConfirmedBlockNumber() (uint64, error) {
 	var latestConfirmedBlockNumber uint64
-	if err := pg.client.Table("blocks").Select("max(number)").Scan(&latestConfirmedBlockNumber).Error; err != nil {
+	if err := pg.client.Table("blocks").Select("max(number)").Where("is_confirmed = ?", true).Scan(&latestConfirmedBlockNumber).Error; err != nil {
 		if strings.Contains(err.Error(), "converting NULL to uint64 is unsupported") {
 			return 0, nil
 		}
@@ -88,13 +105,28 @@ func (pg *postgresClient) UpdateBlock(number uint64, isConfirmed bool) error {
 }
 
 func (pg *postgresClient) InsertBlock(blockInfo *model.Block) error {
-	return pg.client.Create(&blockInfo).Error
+	return pg.client.Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "number"}},
+			UpdateAll: true,
+		},
+	).Create(&blockInfo).Error
 }
 
 func (pg *postgresClient) InsertTransaction(transactionInfo *model.Transaction) error {
-	return pg.client.Create(&transactionInfo).Error
+	return pg.client.Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "hash"}},
+			UpdateAll: true,
+		},
+	).Create(&transactionInfo).Error
 }
 
 func (pg *postgresClient) InsertLog(LogInfo *model.Log) error {
-	return pg.client.Create(&LogInfo).Error
+	return pg.client.Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			UpdateAll: true,
+		},
+	).Create(&LogInfo).Error
 }

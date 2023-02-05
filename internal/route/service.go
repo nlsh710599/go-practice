@@ -31,7 +31,6 @@ func (ctrl *Controller) getLatestNBlocks(c *gin.Context) {
 
 	if err != nil {
 		log.Fatal(err)
-
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"err": err,
 		})
@@ -39,7 +38,7 @@ func (ctrl *Controller) getLatestNBlocks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"res": res,
+		"blocks": res,
 	})
 }
 

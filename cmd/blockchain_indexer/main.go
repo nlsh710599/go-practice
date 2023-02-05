@@ -71,13 +71,13 @@ func main() {
 	if oldestConfirmedBlock != 0 {
 		wg.Add(1)
 		go func() {
-			syncer.SyncConformedBlockBackward(0, oldestConfirmedBlock-1, c, aborter)
+			syncer.SyncConfirmedBlockBackward(0, oldestConfirmedBlock-1, c, aborter)
 			wg.Done()
 		}()
 	}
 
 	headers := make(chan *types.Header)
-	startSyncConformedBlockForward := false
+	startSyncConfirmedBlockForward := false
 
 	sub, err := web3ws.GetClient().SubscribeNewHead(context.Background(), headers)
 	if err != nil {
@@ -91,21 +91,21 @@ func main() {
 			case err := <-sub.Err():
 				log.Fatal(err)
 			case header := <-headers:
-				if !startSyncConformedBlockForward {
+				if !startSyncConfirmedBlockForward {
 					wg.Add(1)
 					go func() {
 						if latestConfirmedBlock == 0 {
-							syncer.SyncConformedBlockBackward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
+							syncer.SyncConfirmedBlockBackward(latestConfirmedBlock, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
 						} else {
-							syncer.SyncConformedBlockForward(latestConfirmedBlock+1, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
+							syncer.SyncConfirmedBlockForward(latestConfirmedBlock+1, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
 						}
 						wg.Done()
 					}()
-					startSyncConformedBlockForward = true
+					startSyncConfirmedBlockForward = true
 				}
 				wg.Add(1)
 				go func() {
-					syncer.SyncNewBlock(header, c, aborter)
+					syncer.SyncNewBlock(header.Number.Uint64(), c)
 					wg.Done()
 				}()
 			case <-aborter:
