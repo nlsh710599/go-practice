@@ -18,26 +18,27 @@ type Controller struct {
 
 func SyncConformedBlockBackward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	for i := to; i > from; i-- {
-		if <-aborter {
+		select {
+		case <-aborter:
 			return
+		default:
+			syncConformedBlock(i, c)
 		}
-		syncConformedBlock(i, c)
 	}
 }
 
 func SyncConformedBlockForward(from uint64, to uint64, c *Controller, aborter <-chan bool) {
 	for i := from; i < to; i++ {
-		if <-aborter {
+		select {
+		case <-aborter:
 			return
+		default:
+			syncConformedBlock(i, c)
 		}
-		syncConformedBlock(i, c)
 	}
 }
 
 func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
-	if <-aborter {
-		return
-	}
 	// TODO: implementation needed
 }
 
