@@ -82,13 +82,20 @@ func (wc *web3Client) GetTransactionDetail(hash string) (model.Transaction, erro
 		log.Panicf("Failed to get transaction sender : %v", err)
 	}
 
+	var to string
+	if txInfo.To() == nil {
+		to = "0x0000000000000000000000000000000000000000"
+	} else {
+		to = txInfo.To().Hex()
+	}
+
 	return model.Transaction{
 		Hash:        txInfo.Hash().Hex(),
 		From:        from.Hex(),
-		To:          txInfo.To().Hex(),
+		To:          to,
 		Nonce:       txInfo.Nonce(),
 		Data:        hex.EncodeToString(txInfo.Data()),
-		Value:       txInfo.Value().Uint64(),
+		Value:       txInfo.Value().String(),
 		BlockNumber: 3,
 		Logs:        logs,
 	}, nil

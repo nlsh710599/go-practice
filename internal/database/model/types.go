@@ -15,7 +15,7 @@ type Transaction struct {
 	To          string `json:"to"`
 	Nonce       uint64 `json:"nonce"`
 	Data        string `json:"data"`
-	Value       uint64 `json:"value"`
+	Value       string `json:"value"`
 	BlockNumber uint64 `json:"block_number"`
 	Logs        []Log
 }
