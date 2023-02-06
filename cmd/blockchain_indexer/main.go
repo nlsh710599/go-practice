@@ -71,7 +71,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			syncer.SyncConfirmedBlockBackward(0, oldestConfirmedBlock-1, c, aborter)
-			wg.Done()
+			defer wg.Add(1)
 		}()
 	}
 
@@ -98,19 +98,19 @@ func main() {
 						} else {
 							syncer.SyncConfirmedBlockForward(latestConfirmedBlock+1, header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
 						}
-						wg.Done()
+						defer wg.Add(1)
 					}()
 					startSyncConfirmedBlockForward = true
 				}
 				wg.Add(1)
 				go func() {
 					syncer.SyncNewBlock(header, c, aborter)
-					wg.Done()
+					defer wg.Add(1)
 				}()
 			case <-aborter:
 				log.Println("handler finished")
 				sub.Unsubscribe()
-				wg.Done()
+				defer wg.Add(1)
 				return
 			}
 		}
