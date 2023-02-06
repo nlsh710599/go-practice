@@ -21,7 +21,7 @@ func SyncConfirmedBlockBackward(from uint64, to uint64, c *Controller, aborter <
 		case <-aborter:
 			return
 		default:
-			syncConfirmedBlock(i, c)
+			syncConfirmedBlock(i, c, aborter)
 		}
 	}
 }
@@ -32,36 +32,53 @@ func SyncConfirmedBlockForward(from uint64, to uint64, c *Controller, aborter <-
 		case <-aborter:
 			return
 		default:
-			syncConfirmedBlock(i, c)
+			syncConfirmedBlock(i, c, aborter)
 		}
 	}
 }
 
-func SyncNewBlock(header *types.Header, c *Controller) {
-	syncBlock(header.Number.Uint64(), false, c)
-	if header.Number.Uint64() > uint64(config.Get().ConfirmationBlockCount) {
-		syncConfirmedBlock(header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c)
+func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
+	select {
+	case <-aborter:
+		return
+	default:
+		syncBlock(header.Number.Uint64(), false, c, aborter)
+		if header.Number.Uint64() > uint64(config.Get().ConfirmationBlockCount) {
+			syncConfirmedBlock(header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
+		}
+	}
+
+}
+
+func syncConfirmedBlock(blockNumber uint64, c *Controller, aborter <-chan bool) {
+	select {
+	case <-aborter:
+		return
+	default:
+		syncBlock(blockNumber, true, c, aborter)
+		err := c.RDS.UpdateBlock(blockNumber, true)
+		if err != nil {
+			log.Panicf("Failed to insert block : %v", err)
+		}
 	}
 }
 
-func syncConfirmedBlock(blockNumber uint64, c *Controller) {
-	syncBlock(blockNumber, true, c)
-	err := c.RDS.UpdateBlock(blockNumber, true)
-	if err != nil {
-		log.Panicf("Failed to insert block : %v", err)
+func syncBlock(blockNumber uint64, isConfirmed bool, c *Controller, aborter <-chan bool) {
+	select {
+	case <-aborter:
+		return
+	default:
+		log.Println("I'm going to sync block No.", blockNumber)
+		blockInfo, err := c.Web3Service.GetBlockByNumber(big.NewInt(int64(blockNumber)))
+		if err != nil {
+			syncBlock(blockNumber, isConfirmed, c, aborter)
+			return
+		}
+		err = c.RDS.InsertBlock(blockInfo)
+		if err != nil {
+			syncBlock(blockNumber, isConfirmed, c, aborter)
+			return
+		}
 	}
-}
 
-func syncBlock(blockNumber uint64, isConfirmed bool, c *Controller) {
-	log.Println("I'm going to sync block No.", blockNumber)
-	blockInfo, err := c.Web3Service.GetBlockByNumber(big.NewInt(int64(blockNumber)))
-	if err != nil {
-		syncBlock(blockNumber, isConfirmed, c)
-		return
-	}
-	err = c.RDS.InsertBlock(blockInfo)
-	if err != nil {
-		syncBlock(blockNumber, isConfirmed, c)
-		return
-	}
 }

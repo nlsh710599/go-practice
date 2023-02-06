@@ -20,7 +20,6 @@ func signalHandler(sigChan chan os.Signal, aborter chan<- bool) {
 		log.Printf("receive signal: %d\n", sig)
 		close(aborter)
 	}
-
 }
 
 func main() {
@@ -105,15 +104,17 @@ func main() {
 				}
 				wg.Add(1)
 				go func() {
-					syncer.SyncNewBlock(header, c)
+					syncer.SyncNewBlock(header, c, aborter)
 					wg.Done()
 				}()
 			case <-aborter:
 				log.Println("handler finished")
+				sub.Unsubscribe()
 				wg.Done()
 				return
 			}
 		}
+
 	}()
 	wg.Wait()
 }
