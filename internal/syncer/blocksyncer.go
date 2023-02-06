@@ -56,10 +56,12 @@ func syncBlock(blockNumber uint64, isConfirmed bool, c *Controller) {
 	log.Println("I'm going to sync block No.", blockNumber)
 	blockInfo, err := c.Web3Service.GetBlockByNumber(big.NewInt(int64(blockNumber)))
 	if err != nil {
-		log.Panicf("Failed to get block by number : %v", err)
+		syncBlock(blockNumber, isConfirmed, c)
+		return
 	}
 	err = c.RDS.InsertBlock(blockInfo)
 	if err != nil {
-		log.Panicf("Failed to sync block : %v", err)
+		syncBlock(blockNumber, isConfirmed, c)
+		return
 	}
 }

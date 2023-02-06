@@ -99,7 +99,6 @@ func (wc *web3Client) GetTransactionDetail(hash string) (model.Transaction, erro
 		BlockNumber: 3,
 		Logs:        logs,
 	}, nil
-
 }
 
 func (wc *web3Client) GetTransactionReceipt(hash string) (*types.Receipt, error) {
