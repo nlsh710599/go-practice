@@ -14,8 +14,8 @@ type RDS interface {
 	GetClient() *gorm.DB
 	CreateTable() error
 	GetLatestNBlocks(uint64) ([]*BlockWithoutTransaction, error)
-	GetBlockByNumber(uint64) (*GetBlockByNumberResp, error)
-	GetTransactionByHash(string) (*GetTransactionByHashResp, error)
+	GetBlockByNumber(uint64) (*model.Block, error)
+	GetTransactionByHash(string) (*model.Transaction, error)
 	GetOldestConfirmedBlockNumber() (uint64, error)
 	GetLatestConfirmedBlockNumber() (uint64, error)
 	InsertBlock(*model.Block) error
@@ -53,24 +53,19 @@ func (pg *postgresClient) GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction
 	return res, nil
 }
 
-func (pg *postgresClient) GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error) {
-	var res *GetBlockByNumberResp
-	if err := pg.client.Model(&model.Block{}).Where("number = ?", n).Scan(&res).Error; err != nil {
-		return nil, err
-	}
-	if err := pg.client.Model(&model.Transaction{}).Select("hash").Where("block_number = ?", n).Scan(&res.Transactions).Error; err != nil {
+func (pg *postgresClient) GetBlockByNumber(n uint64) (*model.Block, error) {
+	// TODO: refine needed
+	res := &model.Block{}
+	if err := pg.client.Model(&model.Block{}).Preload("Transactions").Where("number = ?", n).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func (pg *postgresClient) GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error) {
+func (pg *postgresClient) GetTransactionByHash(txHash string) (*model.Transaction, error) {
 	// TODO: refine needed
-	var res *GetTransactionByHashResp
-	if err := pg.client.Model(&model.Transaction{}).Where("hash = ?", txHash).Scan(&res).Error; err != nil {
-		return nil, err
-	}
-	if err := pg.client.Model(&model.Log{}).Select("data, index").Where("transaction_hash = ?", txHash).Scan(&res.Logs).Error; err != nil {
+	res := &model.Transaction{}
+	if err := pg.client.Model(&model.Transaction{}).Preload("Logs").Where("hash = ?", txHash).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return res, nil

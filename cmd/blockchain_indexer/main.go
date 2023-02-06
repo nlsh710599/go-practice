@@ -105,7 +105,7 @@ func main() {
 				}
 				wg.Add(1)
 				go func() {
-					syncer.SyncNewBlock(header.Number.Uint64(), c)
+					syncer.SyncNewBlock(header, c)
 					wg.Done()
 				}()
 			case <-aborter:
