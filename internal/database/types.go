@@ -20,9 +20,9 @@ type GetTransactionByHashResp struct {
 	Hash  string
 	From  string
 	To    string
-	Nonce string
+	Nonce uint64
 	Data  string
-	Value string
+	Value uint64
 	Logs  []Log
 }
 

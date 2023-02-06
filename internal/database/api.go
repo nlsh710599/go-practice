@@ -14,8 +14,8 @@ type RDS interface {
 	GetClient() *gorm.DB
 	CreateTable() error
 	GetLatestNBlocks(uint64) ([]*BlockWithoutTransaction, error)
-	GetBlockByNumber(uint64) (*model.Block, error)
-	GetTransactionByHash(string) (*model.Transaction, error)
+	GetBlockByNumber(uint64) (*GetBlockByNumberResp, error)
+	GetTransactionByHash(string) (*GetTransactionByHashResp, error)
 	GetOldestConfirmedBlockNumber() (uint64, error)
 	GetLatestConfirmedBlockNumber() (uint64, error)
 	InsertBlock(*model.Block) error
@@ -53,20 +53,48 @@ func (pg *postgresClient) GetLatestNBlocks(n uint64) ([]*BlockWithoutTransaction
 	return res, nil
 }
 
-func (pg *postgresClient) GetBlockByNumber(n uint64) (*model.Block, error) {
-	// TODO: refine needed
-	res := &model.Block{}
-	if err := pg.client.Model(&model.Block{}).Preload("Transactions").Where("number = ?", n).Find(&res).Error; err != nil {
+func (pg *postgresClient) GetBlockByNumber(n uint64) (*GetBlockByNumberResp, error) {
+	var tmp *model.Block
+	var res *GetBlockByNumberResp
+	if err := pg.client.Model(&model.Block{}).Preload("Transactions", func(db *gorm.DB) *gorm.DB {
+		return db.Select("hash, block_number")
+	}).Where("number = ?", n).Find(&tmp).Error; err != nil {
 		return nil, err
 	}
+	txHashList := make([]string, len(tmp.Transactions))
+	for i := range txHashList {
+		txHashList[i] = tmp.Transactions[i].Hash
+	}
+	res = &GetBlockByNumberResp{
+		Number:       tmp.Number,
+		Hash:         tmp.Hash,
+		Timestamp:    tmp.Timestamp,
+		ParentHash:   tmp.ParentHash,
+		Transactions: txHashList,
+	}
+
 	return res, nil
 }
 
-func (pg *postgresClient) GetTransactionByHash(txHash string) (*model.Transaction, error) {
-	// TODO: refine needed
-	res := &model.Transaction{}
-	if err := pg.client.Model(&model.Transaction{}).Preload("Logs").Where("hash = ?", txHash).Find(&res).Error; err != nil {
+func (pg *postgresClient) GetTransactionByHash(txHash string) (*GetTransactionByHashResp, error) {
+	var tmp *model.Transaction
+	var res *GetTransactionByHashResp
+	if err := pg.client.Model(&model.Transaction{}).Preload("Logs").Where("hash = ?", txHash).Find(&tmp).Error; err != nil {
 		return nil, err
+	}
+	logList := make([]Log, len(tmp.Logs))
+	for i := range logList {
+		logList[i].Data = tmp.Logs[i].Data
+		logList[i].Index = tmp.Logs[i].Index
+	}
+	res = &GetTransactionByHashResp{
+		Hash:  tmp.Hash,
+		From:  tmp.From,
+		To:    tmp.To,
+		Nonce: tmp.Nonce,
+		Data:  tmp.Data,
+		Value: tmp.Value,
+		Logs:  logList,
 	}
 	return res, nil
 }
