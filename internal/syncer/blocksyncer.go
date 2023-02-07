@@ -47,7 +47,6 @@ func SyncNewBlock(header *types.Header, c *Controller, aborter <-chan bool) {
 			syncConfirmedBlock(header.Number.Uint64()-uint64(config.Get().ConfirmationBlockCount), c, aborter)
 		}
 	}
-
 }
 
 func syncConfirmedBlock(blockNumber uint64, c *Controller, aborter <-chan bool) {
@@ -80,5 +79,4 @@ func syncBlock(blockNumber uint64, isConfirmed bool, c *Controller, aborter <-ch
 			return
 		}
 	}
-
 }
