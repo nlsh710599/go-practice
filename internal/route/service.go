@@ -66,9 +66,7 @@ func (ctrl *Controller) getBlockByNumber(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"res": block,
-	})
+	c.JSON(http.StatusOK, block)
 }
 
 func (ctrl *Controller) getTxByHash(c *gin.Context) {
@@ -85,7 +83,5 @@ func (ctrl *Controller) getTxByHash(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"res": transaction,
-	})
+	c.JSON(http.StatusOK, transaction)
 }
