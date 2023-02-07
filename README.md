@@ -11,7 +11,7 @@
 | ---------------------- | ------------------------------------------------------------------- | --------------------------------------------------- |
 | Port                   | 8080                                                                | port that API server binds                          |
 | RpcUrl                 | https://nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871  | rpc for the chain                                   |
-| WsRpcUrl               | wss://ws-nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871 | websocket for the chain                             |
+| WsUrl                  | wss://ws-nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871 | websocket for the chain                             |
 | PostgresHost           | localhost                                                           | postgres host                                       |
 | PostgresPort           | 5432                                                                | postgres port                                       |
 | PostgresDatabase       | postgres                                                            | postgres database                                   |

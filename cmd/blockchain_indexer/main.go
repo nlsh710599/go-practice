@@ -39,7 +39,7 @@ func main() {
 		log.Panicf("Failed to create web3 instance: %v", err)
 	}
 
-	web3ws, err := web3.New(config.Get().WsRpcUrl)
+	web3ws, err := web3.New(config.Get().WsUrl)
 	if err != nil {
 		log.Panicf("Failed to create web3 instance: %v", err)
 	}

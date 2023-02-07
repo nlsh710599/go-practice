@@ -9,8 +9,8 @@ import (
 type Config struct {
 	Port int `default:"8080" split_words:"true"`
 
-	RpcUrl   string `default:"https://nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871" split_words:"true"`
-	WsRpcUrl string `default:"wss://ws-nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871" split_words:"true"`
+	RpcUrl string `default:"https://nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871" split_words:"true"`
+	WsUrl  string `default:"wss://ws-nd-391-648-435.p2pify.com/899fe2afc3bc6426d419f89800c2d871" split_words:"true"`
 
 	PostgresHost     string `default:"localhost" split_words:"true"`
 	PostgresPort     int    `default:"5432" split_words:"true"`
