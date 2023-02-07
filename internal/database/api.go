@@ -20,8 +20,6 @@ type RDS interface {
 	GetLatestConfirmedBlockNumber() (uint64, error)
 	InsertBlock(*model.Block) error
 	UpdateBlock(uint64, bool) error
-	InsertTransaction(*model.Transaction) error
-	InsertLog(*model.Log) error
 }
 
 type postgresClient struct {
@@ -134,22 +132,4 @@ func (pg *postgresClient) InsertBlock(blockInfo *model.Block) error {
 			UpdateAll: true,
 		},
 	).Create(&blockInfo).Error
-}
-
-func (pg *postgresClient) InsertTransaction(transactionInfo *model.Transaction) error {
-	return pg.client.Clauses(
-		clause.OnConflict{
-			Columns:   []clause.Column{{Name: "hash"}},
-			UpdateAll: true,
-		},
-	).Create(&transactionInfo).Error
-}
-
-func (pg *postgresClient) InsertLog(LogInfo *model.Log) error {
-	return pg.client.Clauses(
-		clause.OnConflict{
-			Columns:   []clause.Column{{Name: "id"}},
-			UpdateAll: true,
-		},
-	).Create(&LogInfo).Error
 }
